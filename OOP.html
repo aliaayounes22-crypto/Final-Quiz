@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OOP Quest — CSC1200 Interactive Quiz</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script type="module">
+// ================================================================
+// FIREBASE CONFIG — must match host.html exactly
+// ================================================================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, onValue, push, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyPLACEHOLDER_REPLACE_ME",
+  authDomain: "oop-quest.firebaseapp.com",
+  databaseURL: "https://oop-quest-default-rtdb.firebaseio.com",
+  projectId: "oop-quest",
+  storageBucket: "oop-quest.appspot.com",
+  messagingSenderId: "000000000000",
+  appId: "1:000000000000:web:0000000000000000"
+};
+
+const app = initializeApp(FIREBASE_CONFIG);
+const db  = getDatabase(app);
+window._FB = { db, ref, set, onValue, push, serverTimestamp };
+window._FB_READY = true;
+window.dispatchEvent(new Event('firebase_ready'));
+</script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap');
+
+  :root {
+    --c1: #0ff;
+    --c2: #f0f;
+    --c3: #ff0;
+    --c4: #0f8;
+    --c5: #f80;
+    --bg: #050510;
+    --bg2: #0a0a20;
+    --bg3: #0d0d2e;
+    --card: rgba(255,255,255,0.04);
+    --border: rgba(0,255,255,0.2);
+    --easy: #00e676;
+    --medium: #ffd740;
+    --hard: #ff6d6d;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'Exo 2', sans-serif;
+    background: var(--bg);
+    color: #e0e8ff;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 40% at 20% 10%, rgba(0,255,255,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 60% at 80% 80%, rgba(255,0,255,0.05) 0%, transparent 60%),
+      repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(0,255,255,0.015) 50px, rgba(0,255,255,0.015) 51px),
+      repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(0,255,255,0.015) 50px, rgba(0,255,255,0.015) 51px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .screen { display: none; position: relative; z-index: 1; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; align-items: center; }
+
+  /* ====== TYPOGRAPHY ====== */
+  h1 { font-family: 'Orbitron', monospace; }
+  h2 { font-family: 'Orbitron', monospace; font-size: 1.4rem; }
+
+  /* ====== BUTTONS ====== */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 14px 32px; border-radius: 8px; border: none; cursor: pointer;
+    font-family: 'Exo 2', sans-serif; font-size: 1rem; font-weight: 600;
+    transition: all 0.2s; letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #0ff, #0af);
+    color: #000; box-shadow: 0 0 20px rgba(0,255,255,0.4);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 32px rgba(0,255,255,0.6); }
+  .btn-danger {
+    background: linear-gradient(135deg, #f06, #a00);
+    color: #fff; box-shadow: 0 0 20px rgba(255,0,80,0.3);
+  }
+  .btn-ghost {
+    background: rgba(255,255,255,0.06); color: #cde; border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.1); }
+  .btn-sm { padding: 8px 18px; font-size: 0.85rem; }
+
+  /* ====== CARDS ====== */
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 2rem; backdrop-filter: blur(4px);
+  }
+
+  /* ====== GLOWING TEXT ====== */
+  .glow-cyan { color: var(--c1); text-shadow: 0 0 20px rgba(0,255,255,0.7); }
+  .glow-magenta { color: var(--c2); text-shadow: 0 0 20px rgba(255,0,255,0.7); }
+  .glow-yellow { color: var(--c3); text-shadow: 0 0 20px rgba(255,255,0,0.5); }
+  .glow-green { color: var(--c4); text-shadow: 0 0 20px rgba(0,255,136,0.6); }
+
+  /* ====== INPUT ====== */
+  .input-field {
+    background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 20px; color: #e0e8ff;
+    font-family: 'Exo 2', sans-serif; font-size: 1rem; width: 100%;
+    outline: none; transition: border-color 0.2s;
+  }
+  .input-field:focus { border-color: var(--c1); box-shadow: 0 0 16px rgba(0,255,255,0.2); }
+  .input-field::placeholder { color: rgba(200,220,255,0.3); }
+
+  /* ========================
+     SCREEN 1: LANDING
+  ======================== */
+  #screen-landing {
+    justify-content: center; padding: 2rem;
+    text-align: center;
+  }
+  .logo-ring {
+    width: 120px; height: 120px; border-radius: 50%;
+    border: 3px solid var(--c1); display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 2rem; position: relative;
+    box-shadow: 0 0 40px rgba(0,255,255,0.3), inset 0 0 40px rgba(0,255,255,0.05);
+    animation: spin-ring 8s linear infinite;
+  }
+  @keyframes spin-ring {
+    from { box-shadow: 0 0 40px rgba(0,255,255,0.3), 0 0 0 0 rgba(255,0,255,0.2); }
+    50% { box-shadow: 0 0 40px rgba(255,0,255,0.3), 0 0 0 0 rgba(0,255,255,0.2); }
+    to { box-shadow: 0 0 40px rgba(0,255,255,0.3), 0 0 0 0 rgba(255,0,255,0.2); }
+  }
+  .logo-text { font-family: 'Orbitron', monospace; font-size: 2rem; font-weight: 900; color: var(--c1); }
+  .landing-title { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 900; margin-bottom: 0.5rem; line-height: 1.1; }
+  .landing-sub { font-size: 1.1rem; color: rgba(200,220,255,0.6); margin-bottom: 3rem; }
+  .landing-btns { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+  .badge-row { display: flex; gap: 1rem; justify-content: center; margin-top: 2rem; flex-wrap: wrap; }
+  .badge {
+    padding: 6px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .badge-easy { background: rgba(0,230,118,0.15); color: var(--easy); border: 1px solid rgba(0,230,118,0.3); }
+  .badge-med { background: rgba(255,215,64,0.15); color: var(--medium); border: 1px solid rgba(255,215,64,0.3); }
+  .badge-hard { background: rgba(255,109,109,0.15); color: var(--hard); border: 1px solid rgba(255,109,109,0.3); }
+
+  /* ========================
+     SCREEN 2: JOIN (Student)
+  ======================== */
+  #screen-join { justify-content: center; padding: 2rem; }
+  .join-card { max-width: 480px; width: 100%; }
+  .join-card h2 { margin-bottom: 0.5rem; }
+  .join-card p { color: rgba(200,220,255,0.5); margin-bottom: 2rem; font-size: 0.95rem; }
+  .form-group { margin-bottom: 1.2rem; }
+  .form-label { display: block; font-size: 0.85rem; color: rgba(200,220,255,0.6); margin-bottom: 8px; letter-spacing: 0.06em; text-transform: uppercase; }
+
+  /* ========================
+     SCREEN 3: CHARACTER
+  ======================== */
+  #screen-character { justify-content: center; padding: 2rem; text-align: center; }
+  .char-card { max-width: 520px; width: 100%; }
+  .char-icon {
+    font-size: 5rem; margin: 1rem 0;
+    animation: char-bounce 1s ease infinite alternate;
+  }
+  @keyframes char-bounce { from { transform: translateY(0); } to { transform: translateY(-12px); } }
+  .char-name { font-family: 'Orbitron', monospace; font-size: 1.6rem; margin: 0.5rem 0; }
+  .char-desc { color: rgba(200,220,255,0.6); margin-bottom: 2rem; line-height: 1.6; }
+  .char-trait { display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 0.8rem; margin: 4px; }
+
+  /* ========================
+     SCREEN 4: WAITING LOBBY
+  ======================== */
+  #screen-lobby { justify-content: center; padding: 2rem; text-align: center; }
+  .lobby-card { max-width: 600px; width: 100%; }
+  .waiting-anim {
+    width: 60px; height: 60px; border-radius: 50%;
+    border: 3px solid transparent; border-top-color: var(--c1);
+    animation: spin 1s linear infinite; margin: 1.5rem auto;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .player-chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 1.5rem 0; }
+  .player-chip {
+    background: rgba(0,255,255,0.08); border: 1px solid rgba(0,255,255,0.2);
+    border-radius: 20px; padding: 6px 16px; font-size: 0.9rem;
+  }
+
+  /* ========================
+     SCREEN 5: QUIZ
+  ======================== */
+  #screen-quiz { padding: 1.5rem; max-width: 800px; margin: 0 auto; width: 100%; }
+  .quiz-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;
+  }
+  .quiz-meta { font-size: 0.85rem; color: rgba(200,220,255,0.5); }
+  .quiz-meta strong { color: #e0e8ff; }
+  .level-tag {
+    padding: 4px 14px; border-radius: 20px; font-size: 0.8rem;
+    font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .level-easy { background: rgba(0,230,118,0.15); color: var(--easy); }
+  .level-medium { background: rgba(255,215,64,0.15); color: var(--medium); }
+  .level-advanced { background: rgba(255,109,109,0.15); color: var(--hard); }
+
+  /* Progress bar */
+  .progress-wrap { background: rgba(255,255,255,0.06); border-radius: 4px; height: 6px; margin-bottom: 2rem; }
+  .progress-bar { height: 6px; border-radius: 4px; background: linear-gradient(90deg, var(--c1), var(--c2)); transition: width 0.5s; }
+
+  /* Timer */
+  .timer-ring { position: relative; width: 64px; height: 64px; flex-shrink: 0; }
+  .timer-svg { transform: rotate(-90deg); }
+  .timer-track { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 4; }
+  .timer-fill { fill: none; stroke: var(--c1); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 163; transition: stroke-dashoffset 1s linear, stroke 0.5s; }
+  .timer-num {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-family: 'Orbitron', monospace; font-size: 1.1rem; font-weight: 700;
+  }
+
+  /* Question */
+  .question-box { margin-bottom: 2rem; }
+  .question-num { font-size: 0.8rem; color: rgba(200,220,255,0.4); margin-bottom: 0.5rem; letter-spacing: 0.1em; }
+  .question-text { font-size: 1.15rem; line-height: 1.65; font-weight: 400; }
+  .code-snippet {
+    background: rgba(0,0,0,0.5); border: 1px solid rgba(0,255,255,0.15);
+    border-left: 3px solid var(--c1); border-radius: 8px;
+    padding: 1rem 1.2rem; margin-top: 1rem; font-family: 'Courier New', monospace;
+    font-size: 0.9rem; color: #a8f0a0; white-space: pre; overflow-x: auto;
+  }
+
+  /* Answer Options */
+  .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media(max-width: 560px) { .options-grid { grid-template-columns: 1fr; } }
+  .option-btn {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(200,220,255,0.15);
+    border-radius: 12px; padding: 1rem 1.2rem; text-align: left; cursor: pointer;
+    color: #e0e8ff; font-family: 'Exo 2', sans-serif; font-size: 0.95rem;
+    transition: all 0.2s; display: flex; align-items: flex-start; gap: 10px;
+  }
+  .option-btn:hover:not(:disabled) { background: rgba(0,255,255,0.08); border-color: rgba(0,255,255,0.4); }
+  .option-btn.correct { background: rgba(0,230,118,0.15); border-color: var(--easy); }
+  .option-btn.wrong { background: rgba(255,109,109,0.12); border-color: var(--hard); }
+  .option-btn:disabled { cursor: default; }
+  .option-letter {
+    width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.06);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.8rem; flex-shrink: 0; margin-top: 1px;
+    color: rgba(200,220,255,0.5);
+  }
+  .option-btn.correct .option-letter { background: var(--easy); color: #000; }
+  .option-btn.wrong .option-letter { background: var(--hard); color: #000; }
+
+  /* Feedback */
+  .feedback-bar {
+    margin-top: 1.5rem; padding: 1rem; border-radius: 10px; text-align: center;
+    font-weight: 600; font-size: 1rem; display: none;
+  }
+  .feedback-correct { background: rgba(0,230,118,0.12); border: 1px solid rgba(0,230,118,0.3); color: var(--easy); }
+  .feedback-wrong { background: rgba(255,109,109,0.12); border: 1px solid rgba(255,109,109,0.3); color: var(--hard); }
+  .score-float {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(0);
+    font-family: 'Orbitron', monospace; font-size: 3rem; font-weight: 900;
+    pointer-events: none; z-index: 999; transition: all 0.1s;
+  }
+  .score-float.show { animation: score-pop 0.8s forwards; }
+  @keyframes score-pop {
+    0% { transform: translate(-50%,-80%) scale(0.5); opacity: 1; }
+    60% { transform: translate(-50%,-120%) scale(1.3); opacity: 1; }
+    100% { transform: translate(-50%,-160%) scale(1); opacity: 0; }
+  }
+
+  /* Score bar */
+  .score-bar {
+    display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;
+    background: rgba(255,255,255,0.04); border-radius: 12px; padding: 1rem 1.5rem;
+    border: 1px solid var(--border);
+  }
+  .score-label { font-size: 0.8rem; color: rgba(200,220,255,0.5); text-transform: uppercase; letter-spacing: 0.08em; }
+  .score-num { font-family: 'Orbitron', monospace; font-size: 1.8rem; font-weight: 700; color: var(--c1); }
+
+  /* ========================
+     SCREEN 6: RESULTS
+  ======================== */
+  #screen-results { justify-content: center; padding: 2rem; text-align: center; }
+  .results-card { max-width: 600px; width: 100%; }
+  .result-char { font-size: 4rem; margin: 1rem 0; }
+  .result-grade {
+    font-family: 'Orbitron', monospace; font-size: 4rem; font-weight: 900; line-height: 1;
+    margin: 1rem 0;
+  }
+  .stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 2rem 0; }
+  .stat-box { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; }
+  .stat-val { font-family: 'Orbitron', monospace; font-size: 1.5rem; font-weight: 700; }
+  .stat-lbl { font-size: 0.75rem; color: rgba(200,220,255,0.5); margin-top: 4px; text-transform: uppercase; }
+
+  /* ========================
+     SCREEN 7: LEADERBOARD
+  ======================== */
+  #screen-leaderboard { justify-content: center; padding: 2rem; }
+  .lb-card { max-width: 640px; width: 100%; }
+  .lb-title { text-align: center; margin-bottom: 2rem; }
+  .lb-row {
+    display: flex; align-items: center; gap: 1rem; padding: 1rem;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(200,220,255,0.08);
+    border-radius: 12px; margin-bottom: 10px; transition: all 0.2s;
+  }
+  .lb-row:hover { background: rgba(255,255,255,0.06); border-color: rgba(0,255,255,0.2); }
+  .lb-rank {
+    font-family: 'Orbitron', monospace; font-size: 1.1rem; font-weight: 900;
+    width: 36px; text-align: center; flex-shrink: 0;
+  }
+  .rank-1 { color: #ffd700; text-shadow: 0 0 12px rgba(255,215,0,0.6); }
+  .rank-2 { color: #c0c0c0; }
+  .rank-3 { color: #cd7f32; }
+  .lb-char { font-size: 1.6rem; flex-shrink: 0; }
+  .lb-name { flex: 1; font-weight: 600; }
+  .lb-sub { font-size: 0.8rem; color: rgba(200,220,255,0.4); }
+  .lb-score { font-family: 'Orbitron', monospace; font-size: 1.1rem; font-weight: 700; color: var(--c1); }
+  .lb-correct { font-size: 0.8rem; color: rgba(200,220,255,0.4); }
+
+  /* ========================
+     SCREEN 8: HOST DASHBOARD
+  ======================== */
+  #screen-host { padding: 2rem; max-width: 1000px; margin: 0 auto; width: 100%; }
+  .host-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+  .host-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  @media(max-width: 700px) { .host-grid { grid-template-columns: 1fr; } }
+  .host-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; }
+  .host-card h3 { font-family: 'Orbitron', monospace; font-size: 0.9rem; margin-bottom: 1.2rem; color: var(--c1); letter-spacing: 0.05em; }
+  .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
+  .stat-row:last-child { border-bottom: none; }
+  .qr-wrap { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+  #qrcode { background: white; padding: 12px; border-radius: 12px; }
+  .quiz-code-display {
+    font-family: 'Orbitron', monospace; font-size: 2.5rem; font-weight: 900;
+    letter-spacing: 0.3em; color: var(--c1); text-shadow: 0 0 20px rgba(0,255,255,0.5);
+  }
+  .host-player-list { max-height: 220px; overflow-y: auto; }
+  .host-player-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
+  .host-player-item:last-child { border-bottom: none; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot-active { background: var(--easy); box-shadow: 0 0 8px var(--easy); }
+  .dot-done { background: var(--c1); }
+  .dot-waiting { background: rgba(200,220,255,0.3); }
+  .level-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; font-size: 0.85rem; }
+  .level-fill { height: 8px; border-radius: 4px; }
+
+  /* ========================
+     QR SCAN SCREEN
+  ======================== */
+  #screen-qr { justify-content: center; padding: 2rem; text-align: center; }
+  .qr-join-card { max-width: 480px; width: 100%; }
+  .qr-big { font-size: 6rem; margin: 1rem 0; }
+  .qr-instruction { color: rgba(200,220,255,0.6); margin-bottom: 1.5rem; line-height: 1.7; }
+  .code-input-row { display: flex; gap: 10px; }
+  .code-input-row .input-field { text-transform: uppercase; letter-spacing: 0.2em; font-family: 'Orbitron', monospace; font-size: 1.2rem; text-align: center; }
+
+  /* Animations */
+  .fade-in { animation: fadeIn 0.5s ease; }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); } }
+
+  .pulse { animation: pulse 2s ease infinite; }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(0,255,255,0.2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- SCORE FLOAT -->
+<div class="score-float" id="scoreFloat"></div>
+
+<!-- ======================== SCREEN: LANDING ======================== -->
+<div id="screen-landing" class="screen active">
+  <div style="padding: 4rem 2rem; width: 100%; max-width: 700px; margin: 0 auto; text-align: center;" class="fade-in">
+    <div class="logo-ring">
+      <span class="logo-text">C++</span>
+    </div>
+    <h1 class="landing-title">
+      <span class="glow-cyan">OOP</span> <span class="glow-magenta">QUEST</span>
+    </h1>
+    <p class="landing-sub">CSC1200 · Object-Oriented Programming · Interactive Quiz</p>
+    <div class="landing-btns">
+      <button class="btn btn-primary" onclick="showScreen('screen-join')">▶ Join Quiz</button>
+      <button class="btn btn-ghost" onclick="showScreen('screen-qr')">📱 Scan QR Code</button>
+      <button class="btn btn-ghost" onclick="showScreen('screen-host')">🖥 Host Dashboard</button>
+    </div>
+    <div class="badge-row">
+      <span class="badge badge-easy">🟢 Easy · 20 Q</span>
+      <span class="badge badge-med">🟡 Medium · 30 Q</span>
+      <span class="badge badge-hard">🔴 Advanced · 50 Q</span>
+    </div>
+    <p style="margin-top:2rem; color:rgba(200,220,255,0.3); font-size:0.85rem;">100 Questions · 3 Levels · Live Leaderboard · Character Reveal</p>
+  </div>
+</div>
+
+<!-- ======================== SCREEN: QR SCAN / CODE ENTRY ======================== -->
+<div id="screen-qr" class="screen">
+  <div class="qr-join-card card fade-in" style="margin-top:4rem;">
+    <div class="qr-big">📱</div>
+    <h2 class="glow-cyan" style="margin-bottom:0.5rem;">Scan to Join</h2>
+    <p class="qr-instruction">
+      Scan the QR code from the host screen, or enter the quiz code below manually to join the session.
+    </p>
+    <div id="qrcode-join" style="display:flex;justify-content:center;margin:1rem 0;"></div>
+    <p style="font-size:0.85rem; color:rgba(200,220,255,0.4); margin-bottom:1rem;">— or enter quiz code —</p>
+    <div class="code-input-row" style="margin-bottom:1.5rem;">
+      <input class="input-field" id="joinCodeInput" placeholder="OOPCSC" maxlength="6" oninput="this.value=this.value.toUpperCase()">
+      <button class="btn btn-primary" onclick="joinWithCode()">Join</button>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="showScreen('screen-landing')" style="width:100%;">← Back</button>
+  </div>
+</div>
+
+<!-- ======================== SCREEN: JOIN (name entry) ======================== -->
+<div id="screen-join" class="screen">
+  <div class="join-card card fade-in" style="margin-top:4rem;">
+    <h2 class="glow-cyan" style="margin-bottom:0.5rem;">Join OOP Quest</h2>
+    <p>Enter your name to receive your character and begin the quest!</p>
+    <div class="form-group">
+      <label class="form-label">Your Name</label>
+      <input class="input-field" id="playerName" placeholder="e.g. Ahmed Mohamed" maxlength="30">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Student ID (optional)</label>
+      <input class="input-field" id="playerID" placeholder="e.g. 20231234" maxlength="20">
+    </div>
+    <button class="btn btn-primary" style="width:100%; margin-top:0.5rem;" onclick="joinQuiz()">🚀 Enter & Get Character</button>
+    <button class="btn btn-ghost btn-sm" onclick="showScreen('screen-landing')" style="width:100%; margin-top:12px;">← Back</button>
+  </div>
+</div>
+
+<!-- ======================== SCREEN: CHARACTER REVEAL ======================== -->
+<div id="screen-character" class="screen">
+  <div class="char-card card fade-in" style="margin-top:3rem;">
+    <p style="color:rgba(200,220,255,0.5); font-size:0.9rem; margin-bottom:0.5rem;">Welcome, <span id="charPlayerName" class="glow-cyan"></span>!</p>
+    <h2 style="margin-bottom:0.5rem;">Your OOP Character</h2>
+    <div class="char-icon" id="charEmoji">🤖</div>
+    <div class="char-name glow-magenta" id="charName"></div>
+    <p class="char-desc" id="charDesc"></p>
+    <div id="charTraits"></div>
+    <div style="background: rgba(255,255,255,0.04); border-radius:12px; padding:1rem; margin:1.5rem 0; border: 1px solid var(--border);">
+      <div style="font-size:0.8rem; color:rgba(200,220,255,0.5); margin-bottom:0.5rem;">YOUR SPECIAL POWER</div>
+      <div id="charPower" class="glow-green" style="font-size:0.95rem;"></div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;" onclick="showScreen('screen-lobby')">⚡ Ready! Go to Lobby</button>
+  </div>
+</div>
+
+<!-- ======================== SCREEN: WAITING LOBBY ======================== -->
+<div id="screen-lobby" class="screen">
+  <div class="lobby-card card fade-in" style="margin-top:3rem;">
+    <h2 class="glow-cyan" style="text-align:center; margin-bottom:0.5rem;">Waiting for Host</h2>
+    <p style="text-align:center; color:rgba(200,220,255,0.5); margin-bottom:0.5rem;">You're in! The quiz will start when the host begins the session.</p>
+    <div id="fbConnStatus" style="text-align:center;font-size:0.8rem;margin-bottom:0.5rem;color:rgba(255,215,64,0.7);">⏳ Connecting to server...</div>
+    <div class="waiting-anim"></div>
+    <div style="font-family:'Orbitron',monospace; font-size:0.85rem; color:rgba(200,220,255,0.4); text-align:center; margin-bottom:1.5rem;" class="pulse">WAITING FOR HOST TO START...</div>
+    <div class="player-chips" id="lobbyPlayers"></div>
+    <div style="margin-top:2rem; padding:1rem; background:rgba(0,255,255,0.05); border-radius:10px; border:1px solid rgba(0,255,255,0.15);">
+      <div style="font-size:0.8rem; color:rgba(200,220,255,0.5); margin-bottom:0.5rem;">SESSION CODE</div>
+      <div style="font-family:'Orbitron',monospace; font-size:2rem; color:var(--c1); letter-spacing:0.3em;">OOPCSC</div>
+    </div>
+    <div id="lobbyStatusMsg" style="margin-top:1.5rem; padding:1rem; background:rgba(255,215,64,0.08); border-radius:10px; border:1px solid rgba(255,215,64,0.2); font-size:0.9rem; color:rgba(255,215,64,0.8); text-align:center;">
+      ⏳ Waiting for the host to start the quiz...
+    </div>
+  </div>
+</div>
+
+<!-- ======================== SCREEN: QUIZ ======================== -->
+<div id="screen-quiz" class="screen">
+  <div style="width:100%; max-width:800px; margin:0 auto;" class="fade-in">
+    <!-- Top bar -->
+    <div class="quiz-header">
+      <div>
+        <div style="font-family:'Orbitron',monospace; font-size:0.75rem; color:rgba(200,220,255,0.4); margin-bottom:4px;">OOP QUEST</div>
+        <span class="level-tag" id="qLevelTag">EASY</span>
+      </div>
+      <div class="timer-ring">
+        <svg class="timer-svg" width="64" height="64" viewBox="0 0 64 64">
+          <circle class="timer-track" cx="32" cy="32" r="26"/>
+          <circle class="timer-fill" id="timerCircle" cx="32" cy="32" r="26" stroke-dashoffset="0"/>
+        </svg>
+        <div class="timer-num" id="timerNum">30</div>
+      </div>
+    </div>
+
+    <!-- Score + progress -->
+    <div class="score-bar">
+      <div>
+        <div class="score-label">Score</div>
+        <div class="score-num" id="currentScore">0</div>
+      </div>
+      <div style="flex:1; margin:0 1rem;">
+        <div class="progress-wrap" style="margin-bottom:8px;">
+          <div class="progress-bar" id="quizProgressBar" style="width:0%"></div>
+        </div>
+        <div class="quiz-meta">
+          Question <strong id="qNum">1</strong> of <strong id="qTotal">100</strong>
+          &nbsp;·&nbsp; Correct: <strong id="qCorrect">0</strong>
+          &nbsp;·&nbsp; <span id="qCharMini"></span>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div class="score-label">Streak</div>
+        <div class="score-num glow-yellow" id="streakNum" style="font-size:1.4rem;">🔥0</div>
+      </div>
+    </div>
+
+    <!-- Question -->
+    <div class="card question-box">
+      <div class="question-num" id="qNumDisplay">QUESTION 1</div>
+      <div class="question-text" id="questionText">Loading...</div>
+      <div id="codeBlock" class="code-snippet" style="display:none;"></div>
+    </div>
+
+    <!-- Options -->
+    <div class="options-grid" id="optionsGrid"></div>
+
+    <!-- Feedback -->
+    <div class="feedback-bar feedback-correct" id="feedbackBar"></div>
+  </div>
+</div>
+
+<!-- ======================== SCREEN: RESULTS ======================== -->
+<div id="screen-results" class="screen">
+  <div class="results-card card fade-in" style="margin-top:3rem;">
+    <h2 style="margin-bottom:0.5rem;">Quest Complete!</h2>
+    <div class="result-char" id="resultChar"></div>
+    <div class="result-grade" id="resultGrade"></div>
+    <div id="resultMsg" style="color:rgba(200,220,255,0.6); margin-bottom:1rem;"></div>
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-val glow-cyan" id="rScore">0</div>
+        <div class="stat-lbl">Total Score</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val glow-green" id="rCorrect">0/0</div>
+        <div class="stat-lbl">Correct</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val glow-yellow" id="rStreak">0</div>
+        <div class="stat-lbl">Best Streak</div>
+      </div>
+    </div>
+    <div style="margin:1rem 0; padding:1rem; background:rgba(255,255,255,0.03); border-radius:12px; border:1px solid var(--border);">
+      <div style="font-size:0.8rem; color:rgba(200,220,255,0.5); margin-bottom:0.8rem;">LEVEL BREAKDOWN</div>
+      <div id="levelBreakdown"></div>
+    </div>
+    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+      <button class="btn btn-primary" style="flex:1;" onclick="showLeaderboard()">🏆 Leaderboard</button>
+      <button class="btn btn-ghost" style="flex:1;" onclick="restartQuiz()">🔄 Try Again</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== SCREEN: LEADERBOARD ======================== -->
+<div id="screen-leaderboard" class="screen">
+  <div class="lb-card fade-in" style="margin-top:2rem;">
+    <div class="lb-title">
+      <div style="font-size:2rem; margin-bottom:0.5rem;">🏆</div>
+      <h2 class="glow-yellow">Leaderboard</h2>
+      <p style="color:rgba(200,220,255,0.5); font-size:0.9rem;">OOP Quest · CSC1200</p>
+    </div>
+    <div id="leaderboardList"></div>
+    <div style="display:flex; gap:12px; margin-top:1.5rem; flex-wrap:wrap;">
+      <button class="btn btn-ghost" style="flex:1;" onclick="showScreen('screen-landing')">🏠 Home</button>
+      <button class="btn btn-primary" style="flex:1;" onclick="restartQuiz()">🔄 Play Again</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== SCREEN: HOST DASHBOARD ======================== -->
+<div id="screen-host" class="screen">
+  <div style="max-width:1000px; width:100%; margin: 0 auto;" class="fade-in">
+    <div class="host-header">
+      <div>
+        <h1 style="font-size:1.6rem;" class="glow-cyan">Host Dashboard</h1>
+        <p style="color:rgba(200,220,255,0.5); font-size:0.9rem;">OOP Quest · CSC1200 · Dr. AMR MEGAHED</p>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn btn-primary btn-sm" onclick="hostStartQuiz()">▶ Start Quiz</button>
+        <button class="btn btn-danger btn-sm" onclick="showLeaderboard()">🏆 Leaderboard</button>
+        <button class="btn btn-ghost btn-sm" onclick="showScreen('screen-landing')">← Back</button>
+      </div>
+    </div>
+
+    <div class="host-grid">
+      <!-- QR Code -->
+      <div class="host-card">
+        <h3>📱 QR CODE — SCAN TO JOIN</h3>
+        <div class="qr-wrap">
+          <div id="qrcode" style="background:white; padding:12px; border-radius:12px; display:inline-block;"></div>
+          <div class="quiz-code-display">OOPCSC</div>
+          <p style="font-size:0.8rem; color:rgba(200,220,255,0.4);">Students scan this code to join the quiz</p>
+        </div>
+      </div>
+
+      <!-- Session Stats -->
+      <div class="host-card">
+        <h3>📊 SESSION STATS</h3>
+        <div class="stat-row"><span>Players Joined</span><span class="glow-cyan" id="hostPlayerCount">0</span></div>
+        <div class="stat-row"><span>Quiz Status</span><span id="hostStatus" style="color:var(--medium);">Waiting</span></div>
+        <div class="stat-row"><span>Total Questions</span><span>100</span></div>
+        <div class="stat-row"><span>Easy</span><span style="color:var(--easy);">20 Q</span></div>
+        <div class="stat-row"><span>Medium</span><span style="color:var(--medium);">30 Q</span></div>
+        <div class="stat-row"><span>Advanced</span><span style="color:var(--hard);">50 Q</span></div>
+        <div style="margin-top:1rem;">
+          <div class="level-bar"><span style="color:var(--easy); width:70px;">Easy</span>
+            <div style="flex:1; background:rgba(255,255,255,0.06); border-radius:4px; height:8px;">
+              <div class="level-fill" style="width:20%; background:var(--easy);"></div>
+            </div><span>20%</span>
+          </div>
+          <div class="level-bar"><span style="color:var(--medium); width:70px;">Medium</span>
+            <div style="flex:1; background:rgba(255,255,255,0.06); border-radius:4px; height:8px;">
+              <div class="level-fill" style="width:30%; background:var(--medium);"></div>
+            </div><span>30%</span>
+          </div>
+          <div class="level-bar"><span style="color:var(--hard); width:70px;">Advanced</span>
+            <div style="flex:1; background:rgba(255,255,255,0.06); border-radius:4px; height:8px;">
+              <div class="level-fill" style="width:50%; background:var(--hard);"></div>
+            </div><span>50%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Player List -->
+      <div class="host-card">
+        <h3>👥 PLAYERS</h3>
+        <div class="host-player-list" id="hostPlayerList">
+          <div style="color:rgba(200,220,255,0.3); font-size:0.9rem; text-align:center; padding:1rem;">No players yet. Share the QR code!</div>
+        </div>
+      </div>
+
+      <!-- Live Top 3 -->
+      <div class="host-card">
+        <h3>🏆 LIVE TOP 3</h3>
+        <div id="hostTop3">
+          <div style="color:rgba(200,220,255,0.3); font-size:0.9rem; text-align:center; padding:1rem;">Quiz hasn't started yet</div>
+        </div>
+        <div style="margin-top:1.5rem;">
+          <button class="btn btn-ghost btn-sm" style="width:100%;" onclick="addDemoPlayer()">+ Add Demo Player</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ================================================================
+//  STATE
+// ================================================================
+const state = {
+  playerName: '',
+  playerID: '',
+  character: null,
+  currentQ: 0,
+  score: 0,
+  correct: 0,
+  streak: 0,
+  bestStreak: 0,
+  answered: [],
+  timerInterval: null,
+  timeLeft: 30,
+  levelCorrect: { easy:0, medium:0, advanced:0 },
+  levelTotal: { easy:0, medium:0, advanced:0 },
+};
+
+// Shared leaderboard (simulated across "players")
+let leaderboard = [];
+
+// ================================================================
+//  CHARACTERS
+// ================================================================
+const CHARACTERS = [
+  {
+    emoji: '🧙‍♂️', name: 'The Polymorphist',
+    desc: 'Master of many forms. You see through the surface to the virtual dispatch beneath.',
+    traits: ['Runtime Binding','Virtual Tables','Dynamic Cast'],
+    power: 'Can answer polymorphism questions with +50% bonus time.',
+    traitColor: '#f0f'
+  },
+  {
+    emoji: '🏗️', name: 'The Constructor',
+    desc: 'You bring objects to life. Every instance you touch is perfectly initialized.',
+    traits: ['Init Lists','Default Args','Copy Constructor'],
+    power: 'Constructor & Destructor questions give double points.',
+    traitColor: '#0ff'
+  },
+  {
+    emoji: '🔒', name: 'The Encapsulator',
+    desc: 'Keeper of private data. No unauthorized access gets past your getters and setters.',
+    traits: ['Data Hiding','Access Modifiers','Getters & Setters'],
+    power: 'Never loses streak bonus on access modifier questions.',
+    traitColor: '#0f8'
+  },
+  {
+    emoji: '🧬', name: 'The Inheritor',
+    desc: 'You stand on the shoulders of giants — base classes fuel your derived power.',
+    traits: ['Base Classes','Public Inheritance','Method Overriding'],
+    power: 'Inheritance questions restore 5 seconds to the timer.',
+    traitColor: '#ff0'
+  },
+  {
+    emoji: '⚡', name: 'The Overloader',
+    desc: 'One name, infinite potential. You bend operators and functions to your will.',
+    traits: ['Operator Overloading','Function Overloading','Signatures'],
+    power: 'Overloading questions always show a helpful hint.',
+    traitColor: '#f80'
+  },
+  {
+    emoji: '🌀', name: 'The Abstract',
+    desc: 'A blueprint of blueprints. Pure virtual, untouchable, unstoppable.',
+    traits: ['Pure Virtual','Abstract Classes','Interfaces'],
+    power: 'Can skip one question per quiz without losing streak.',
+    traitColor: '#8af'
+  },
+  {
+    emoji: '🔗', name: 'The Static One',
+    desc: 'Shared across all instances. You belong to the class itself, not just one object.',
+    traits: ['Static Members','Class-level Data','Utility Methods'],
+    power: 'Static & scope questions award bonus streak multiplier.',
+    traitColor: '#fa0'
+  },
+  {
+    emoji: '🤝', name: 'The Friend',
+    desc: 'Trusted ally of the class. You access the private, because you\'ve earned it.',
+    traits: ['Friend Functions','Friend Classes','External Access'],
+    power: 'Friend function questions give hints for free.',
+    traitColor: '#f66'
+  }
+];
+
+// ================================================================
+//  QUESTIONS BANK — 100 Questions
+//  Levels: easy (20), medium (30), advanced (50)
+// ================================================================
+const QUESTIONS = [
+  // ---- EASY (20) ----
+  { level:'easy', text:'What does OOP stand for?', options:['Object-Oriented Programming','Open Operator Protocol','Object Overloading Practice','Optional Output Programming'], correct:0 },
+  { level:'easy', text:'Which keyword is used to define a class in C++?', options:['object','struct','class','define'], correct:2 },
+  { level:'easy', text:'What is an object in OOP?', options:['A function definition','A primitive data type','An instance of a class','A loop construct'], correct:2 },
+  { level:'easy', text:'Which access modifier makes members accessible ONLY within the class?', options:['public','protected','private','static'], correct:2 },
+  { level:'easy', text:'A constructor has the same name as the:', options:['Method','Object','Class','Variable'], correct:2 },
+  { level:'easy', text:'What is the return type of a constructor?', options:['void','int','bool','No return type'], correct:3 },
+  { level:'easy', text:'The "is-a" relationship in OOP is represented by:', options:['Composition','Encapsulation','Inheritance','Polymorphism'], correct:2 },
+  { level:'easy', text:'Which OOP concept bundles data and methods into one unit?', options:['Inheritance','Encapsulation','Polymorphism','Abstraction'], correct:1 },
+  { level:'easy', text:'A destructor is called when:', options:['An object is created','A method is called','An object goes out of scope','A class is defined'], correct:2 },
+  { level:'easy', text:'Which symbol is used to call a method on an object?', options:['->','::','.','#'], correct:2 },
+  { level:'easy', text:'What does "public" access mean?', options:['Only the class can access it','Only derived classes can access it','Anyone can access it','Only static methods can access it'], correct:2 },
+  { level:'easy', text:'In C++, which OOP language feature allows reusing code from existing classes?', options:['Encapsulation','Abstraction','Inheritance','Overloading'], correct:2 },
+  { level:'easy', text:'OOP contrasts with which programming style?', options:['Functional','Procedural','Logical','Declarative'], correct:1 },
+  { level:'easy', text:'What is a class in OOP?', options:['An instance','A function','A blueprint for objects','A variable'], correct:2 },
+  { level:'easy', text:'Which of the following is NOT an OOP language?', options:['C++','Java','FORTRAN','Smalltalk'], correct:2 },
+  { level:'easy', text:'A getter method is used to:', options:['Set private data','Delete an object','Retrieve private data','Overload an operator'], correct:2 },
+  { level:'easy', text:'How many objects can be created from one class?', options:['Only one','Exactly two','Unlimited','At most 10'], correct:2 },
+  { level:'easy', text:'The "protected" access modifier allows access to:', options:['All code','Only the current class','The class and its derived classes','Nobody'], correct:2 },
+  { level:'easy', text:'What is polymorphism?', options:['Having multiple classes','Ability to take multiple forms','Hiding data','Inheriting from multiple parents'], correct:1 },
+  { level:'easy', text:'A setter method is also called a:', options:['Accessor','Constructor','Mutator','Destructor'], correct:2 },
+
+  // ---- MEDIUM (30) ----
+  { level:'medium', text:'What is method overloading?', options:['Same method name, same parameters','Same method name, different parameters','Different method names, same return type','Redefining a parent method'], correct:1 },
+  { level:'medium', text:'Which keyword makes a function virtual in C++?', options:['override','abstract','virtual','dynamic'], correct:2 },
+  { level:'medium', text:'What is the correct syntax for a destructor?', options:['void ~ClassName()','~ClassName()','delete ClassName()','~void ClassName()'], correct:1 },
+  { level:'medium', text:'Static class members belong to:', options:['Each object separately','The class itself','Derived classes only','Friend functions only'], correct:1 },
+  { level:'medium', text:'In inheritance, the base class constructor is called:', options:['After the derived','Before the derived','At the same time','Never automatically'], correct:1 },
+  { level:'medium', text:'What does the "." operator do?', options:['Points to a pointer member','Accesses a member via an object','Accesses a static method','Resolves scope'], correct:1 },
+  { level:'medium', text:'Which inheritance mode makes public members become private in the derived class?', options:['Public inheritance','Protected inheritance','Private inheritance','Default inheritance'], correct:2 },
+  { level:'medium', text:'Copy constructor signature is:', options:['ClassName(ClassName c)','ClassName(const ClassName& c)','ClassName copy(ClassName c)','void ClassName(ClassName c)'], correct:1 },
+  { level:'medium', text:'An object that initializes another object of the same class uses the:', options:['Default constructor','Parameterized constructor','Copy constructor','Destructor'], correct:2 },
+  { level:'medium', text:'What is function overriding?', options:['Same function name, different params','Redefining base class function in derived class','Calling a deleted function','Adding virtual to a method'], correct:1 },
+  { level:'medium', text:'The scope resolution operator "::" is used to:', options:['Access object members','Define methods outside the class','Call destructors','Delete pointers'], correct:1 },
+  { level:'medium', text:'Which of the following represents multilevel inheritance?', options:['A inherits B and C','C inherits B, B inherits A','A and B both inherit from C','A inherits B and B inherits A simultaneously'], correct:1 },
+  { level:'medium', text:'A static method can access:', options:['All instance members','Only static members','Protected members only','Private members of other classes'], correct:1 },
+  { level:'medium', text:'Operator overloading syntax in C++ uses the keyword:', options:['overload','redefine','operator','override'], correct:2 },
+  { level:'medium', text:'Destructors run in which order compared to constructors?', options:['Same order','Random order','Reverse order','Simultaneous'], correct:2 },
+  { level:'medium', text:'What is data hiding?', options:['Encrypting data','Making data private and exposing it through methods','Deleting private members','Compressing the class'], correct:1 },
+  { level:'medium', text:'In C++, how do you declare a static data member outside the class?', options:['static int ClassName::var = 0;','int ClassName::var = 0;','ClassName::var = 0;','Both A and B'], correct:1 },
+  { level:'medium', text:'Which type of inheritance does C++ support but Java does NOT?', options:['Single','Multilevel','Multiple','Hierarchical'], correct:2 },
+  { level:'medium', text:'A friend function of a class:', options:['Is a member of the class','Is not a member but has access to private members','Can only access public members','Is always virtual'], correct:1 },
+  { level:'medium', text:'Compile-time polymorphism is achieved through:', options:['Virtual functions','Pointers','Method overloading','Inheritance only'], correct:2 },
+  { level:'medium', text:'Run-time polymorphism is achieved through:', options:['Function overloading','Templates','Virtual functions','Static methods'], correct:2 },
+  { level:'medium', text:'What does "new" keyword do in C++?', options:['Creates a static object','Allocates dynamic memory for an object','Overloads an operator','Calls the destructor'], correct:1 },
+  { level:'medium', text:'Friendship in C++ is:', options:['Mutual and inherited','One-directional and not inherited','Always mutual','Always inherited'], correct:1 },
+  { level:'medium', text:'Which is the correct way to define a class method outside the class?', options:['void ClassName.method(){}','void method(){}','void ClassName::method(){}','ClassName void method(){}'], correct:2 },
+  { level:'medium', text:'An initialization list in a constructor looks like:', options:['ClassName() { a=0; }','ClassName() : a(0) {}','ClassName() := a(0) {}','ClassName() -> a(0) {}'], correct:1 },
+  { level:'medium', text:'Abstract classes in C++ are created by:', options:['Using the abstract keyword','Having at least one pure virtual function','Inheriting from multiple classes','Making constructors private'], correct:1 },
+  { level:'medium', text:'The "this" pointer refers to:', options:['The parent class object','The current object instance','A static member','A friend class'], correct:1 },
+  { level:'medium', text:'What is the benefit of using getters and setters?', options:['Faster execution','Input validation and controlled access','More memory usage','Shorter code'], correct:1 },
+  { level:'medium', text:'Which OOP concept hides unnecessary details from the user?', options:['Encapsulation','Inheritance','Abstraction','Polymorphism'], correct:2 },
+  { level:'medium', text:'In C++, what happens if you do not provide any constructor?', options:['Compile error','The compiler provides a default constructor','The object cannot be created','Random initialization'], correct:1 },
+
+  // ---- ADVANCED (50) ----
+  { level:'advanced', text:'What is a pure virtual function?', options:['A virtual function with a body','A function declared with = 0 and no body in base','A function that cannot be overridden','A static virtual function'], correct:1 },
+  { level:'advanced', text:'A class with at least one pure virtual function is called:', options:['Interface class','Abstract class','Template class','Friend class'], correct:1 },
+  { level:'advanced', text:'Can you instantiate an abstract class directly?', options:['Yes','No','Only with static','Only with friend'], correct:1 },
+  {
+    level:'advanced',
+    text:'What is the output of this code?',
+    code:`class A {
+public:
+  A() { cout << "A "; }
+  ~A() { cout << "~A "; }
+};
+class B : public A {
+public:
+  B() { cout << "B "; }
+  ~B() { cout << "~B "; }
+};
+int main() { B b; }`,
+    options:['A B ~A ~B','B A ~B ~A','A B ~B ~A','B ~B A ~A'],
+    correct:2
+  },
+  { level:'advanced', text:'Virtual functions implement which type of binding?', options:['Early (compile-time)','Static','Late (run-time)','Lexical'], correct:2 },
+  { level:'advanced', text:'What is a vtable?', options:['A virtual variable table','A table of function pointers for virtual dispatch','A template table','A variable type table'], correct:1 },
+  { level:'advanced', text:'The diamond problem occurs in:', options:['Single inheritance','Multiple inheritance','Hierarchical inheritance','Multilevel inheritance'], correct:1 },
+  { level:'advanced', text:'Which keyword resolves the diamond problem in C++?', options:['override','final','virtual (in inheritance)','abstract'], correct:2 },
+  {
+    level:'advanced',
+    text:'What does this code print?',
+    code:`class Shape {
+public:
+  virtual void area() { cout << "Shape"; }
+};
+class Rect : public Shape {
+public:
+  void area() { cout << "Rect"; }
+};
+int main() {
+  Shape* s = new Rect();
+  s->area();
+}`,
+    options:['Shape','Rect','Error','ShapeRect'],
+    correct:1
+  },
+  { level:'advanced', text:'Which operator cannot be overloaded in C++?', options:['+','::', '[]', '<<'], correct:1 },
+  { level:'advanced', text:'What is the purpose of a virtual destructor?', options:['Faster deletion','Ensure derived destructors are called via base pointer','Allow multiple destructors','Prevent object deletion'], correct:1 },
+  { level:'advanced', text:'In multiple inheritance, if class C inherits from A and B both having method "show()", calling c.show() causes:', options:['Calls A version','Calls B version','Ambiguity error','Calls both'], correct:2 },
+  { level:'advanced', text:'What is object slicing?', options:['Splitting an object across files','Losing derived class data when assigned to a base object','Copying a const object','Deleting specific members'], correct:1 },
+  { level:'advanced', text:'A function template in C++ provides:', options:['Runtime polymorphism','Compile-time generics','Virtual dispatch','Dynamic casting'], correct:1 },
+  { level:'advanced', text:'What does "override" keyword (C++11) do?', options:['Forces the function to be virtual','Checks that the function actually overrides a virtual base','Prevents further overriding','Makes the function pure virtual'], correct:1 },
+  { level:'advanced', text:'The "final" keyword in C++ prevents:', options:['Constructor calls','Further inheritance or overriding','Static access','Friend declarations'], correct:1 },
+  { level:'advanced', text:'Which CANNOT be overloaded?', options:['[ ]','->','::','+'], correct:2 },
+  {
+    level:'advanced',
+    text:'Predict the output:',
+    code:`class Counter {
+  static int count;
+public:
+  Counter() { count++; }
+  static int getCount() { return count; }
+};
+int Counter::count = 0;
+int main() {
+  Counter a, b, c;
+  cout << Counter::getCount();
+}`,
+    options:['0','1','2','3'],
+    correct:3
+  },
+  { level:'advanced', text:'A pure virtual function with "= 0" makes the class:', options:['Concrete','Abstract','Static','Final'], correct:1 },
+  { level:'advanced', text:'Which is true about friend functions?', options:['They are members of the class','They violate encapsulation slightly but are useful','They are automatically virtual','They inherit with the class'], correct:1 },
+  { level:'advanced', text:'Early binding (compile-time) uses:', options:['Virtual functions','Pointers to base','Function overloading','Dynamic_cast'], correct:2 },
+  { level:'advanced', text:'What does dynamic_cast do?', options:['Casts at compile-time','Safe downcast with RTTI at runtime','Converts unrelated types','Casts integers to floats'], correct:1 },
+  { level:'advanced', text:'Constructor overloading requires:', options:['Different names','Different return types','Different parameter lists','No difference — it is not allowed'], correct:2 },
+  { level:'advanced', text:'Initialization list is preferred over assignment inside constructor body because:', options:['It is slower','It directly initializes members, required for const/reference members','It avoids constructors','It deletes default values'], correct:1 },
+  { level:'advanced', text:'Which is true about static member functions?', options:['They have a "this" pointer','They can access non-static members','They belong to the class not the instance','They are always virtual'], correct:2 },
+  { level:'advanced', text:'Protected inheritance means a public base member becomes:', options:['Public in derived','Protected in derived','Private in derived','Unchanged'], correct:1 },
+  { level:'advanced', text:'Which is the correct declaration of a pure virtual function?', options:['virtual void f();','virtual void f() = 0;','void f() = 0;','pure virtual void f();'], correct:1 },
+  { level:'advanced', text:'A deep copy differs from a shallow copy because:', options:['It copies more members','It copies data pointed to, not just the pointer','It is faster','It is done by the default copy constructor'], correct:1 },
+  {
+    level:'advanced',
+    text:'What is the issue with this code?',
+    code:`class MyClass {
+  int* data;
+public:
+  MyClass(int v) { data = new int(v); }
+  ~MyClass() { delete data; }
+};
+int main() {
+  MyClass a(5);
+  MyClass b = a;
+}`,
+    options:['No issue','Double deletion due to shallow copy','Memory leak','Constructor not called'],
+    correct:1
+  },
+  { level:'advanced', text:'Which operator is used to access a member through a pointer?', options:['.','::', '->', '&'], correct:2 },
+  { level:'advanced', text:'What does "delete" do with a dynamically allocated object?', options:['Only frees memory','Calls destructor then frees memory','Only calls destructor','Marks memory as reusable without cleanup'], correct:1 },
+  { level:'advanced', text:'Which is true about hierarchical inheritance?', options:['One child, many parents','One parent, many children','Many parents, many children','One parent, one child'], correct:1 },
+  { level:'advanced', text:'In C++, member functions defined inside the class body are implicitly:', options:['Virtual','Inline','Static','Abstract'], correct:1 },
+  { level:'advanced', text:'What does "typeid" do in C++?', options:['Checks if two objects are equal','Returns the type information of an object at runtime','Casts between types','Deletes type information'], correct:1 },
+  { level:'advanced', text:'A class template is instantiated:', options:['When defined','When a specific type is provided','At runtime','Never automatically'], correct:1 },
+  { level:'advanced', text:'Which statement about constructors is FALSE?', options:['They can be overloaded','They have no return type','They can be virtual','They are called automatically at object creation'], correct:2 },
+  { level:'advanced', text:'What is covariant return type?', options:['Overloaded function with different return types','Overriding function returning a more derived type than the base','A template return type','A static return type'], correct:1 },
+  { level:'advanced', text:'Private members of a base class:', options:['Are inherited and accessible','Are inherited but inaccessible directly in derived','Are not inherited at all','Become public in derived class'], correct:1 },
+  {
+    level:'advanced',
+    text:'What will this print?',
+    code:`class A {
+public:
+  virtual void show() { cout << "A"; }
+};
+class B : public A {
+public:
+  void show() { cout << "B"; }
+};
+class C : public B {
+public:
+  void show() { cout << "C"; }
+};
+int main() {
+  A* p = new C();
+  p->show();
+}`,
+    options:['A','B','C','Error'],
+    correct:2
+  },
+  { level:'advanced', text:'Which of these is true about the copy assignment operator?', options:['It is the same as copy constructor','It is called when an already-existing object is assigned from another','It cannot be overloaded','It runs before the destructor'], correct:1 },
+  { level:'advanced', text:'What is the "Rule of Three" in C++?', options:['Three constructors required','If you define destructor, copy constructor, or copy assignment, define all three','Three access specifiers','Three levels of inheritance'], correct:1 },
+  { level:'advanced', text:'Which statement is true about operator overloading?', options:['All operators can be overloaded','Overloading changes operator precedence','Operator meaning for built-in types can be changed','New operators cannot be created'], correct:3 },
+  { level:'advanced', text:'What is the output of: int x=5; cout << x++;', options:['4','5','6','Undefined'], correct:1 },
+  { level:'advanced', text:'Which keyword prevents a class from being inherited?', options:['abstract','static','final','sealed'], correct:2 },
+  { level:'advanced', text:'An interface in OOP is most closely represented in C++ by:', options:['A struct','A class with all pure virtual functions','A template','A friend class'], correct:1 },
+  { level:'advanced', text:'What happens if a derived class does NOT override a pure virtual function?', options:['Runtime error','The base version is called','The derived class also becomes abstract','Compile error immediately'], correct:2 },
+  { level:'advanced', text:'Which is true about the "this" pointer in static methods?', options:['It points to the class','It points to NULL','It does not exist in static methods','It points to the base class'], correct:2 },
+  {
+    level:'advanced',
+    text:'What does this print?',
+    code:`class Base {
+public:
+  Base() { cout << "Base "; }
+};
+class Mid : public Base {
+public:
+  Mid() { cout << "Mid "; }
+};
+class Child : public Mid {
+public:
+  Child() { cout << "Child"; }
+};
+int main() { Child c; }`,
+    options:['Child Mid Base','Base Mid Child','Mid Base Child','Base Child Mid'],
+    correct:1
+  },
+  { level:'advanced', text:'Which best describes encapsulation?', options:['Hiding implementation and exposing only the interface','Creating multiple instances','Reusing parent class methods','Calling virtual functions'], correct:0 },
+  { level:'advanced', text:'What does RTTI stand for?', options:['Runtime Type Inheritance','Run-Time Type Information','Real-Time Type Interface','Recursive Type Identification'], correct:1 },
+];
+
+// ================================================================
+//  SCREEN NAVIGATION
+// ================================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  el.classList.add('active');
+  el.querySelectorAll('.fade-in').forEach(f => { f.style.animation='none'; void f.offsetWidth; f.style.animation=''; });
+}
+
+// ================================================================
+//  QR CODE GENERATION
+// ================================================================
+function generateQRCodes() {
+  const base = window.location.href.split('?')[0];
+  // Always point to OOP.html (this file)
+  const url = (base.includes('OOP.html') ? base : base.replace(/[^/]*$/, 'OOP.html')) + '?code=OOPCSC';
+  if (typeof QRCode !== 'undefined') {
+    const qr1 = document.getElementById('qrcode');
+    if (qr1 && !qr1.hasChildNodes()) {
+      new QRCode(qr1, { text: url, width: 160, height: 160, colorDark:'#000', colorLight:'#fff' });
+    }
+    const qr2 = document.getElementById('qrcode-join');
+    if (qr2 && !qr2.hasChildNodes()) {
+      new QRCode(qr2, { text: url, width: 140, height: 140, colorDark:'#000', colorLight:'#fff' });
+    }
+  }
+}
+window.onload = () => { generateQRCodes(); checkURLCode(); initFirebaseStudent(); };
+
+// ================================================================
+//  FIREBASE — student side
+// ================================================================
+let _db, _ref, _set, _onValue, _push;
+let hostMode = false;
+
+function initFirebaseStudent() {
+  if (!window._FB) { setTimeout(initFirebaseStudent, 100); return; }
+  ({ db:_db, ref:_ref, set:_set, onValue:_onValue, push:_push } = window._FB);
+
+  // Show connected
+  const cs = document.getElementById('fbConnStatus');
+  if (cs) { cs.style.color='rgba(0,230,118,0.8)'; cs.textContent='🟢 Connected to server'; }
+
+  // Listen to host state changes
+  _onValue(_ref(_db, 'quiz/hostState'), snap => {
+    const m = snap.val();
+    if (m) handleHostMessage(m);
+  });
+}
+window.addEventListener('firebase_ready', initFirebaseStudent);
+if (window._FB_READY) initFirebaseStudent();
+
+function handleHostMessage(m) {
+  if (!m || !m.type) return;
+  switch (m.type) {
+    case 'QUIZ_START':
+      hostMode = true;
+      state.currentQ = -1;
+      state.score = 0; state.correct = 0;
+      state.streak = 0; state.bestStreak = 0;
+      state.levelCorrect = { easy:0, medium:0, advanced:0 };
+      state.levelTotal   = { easy:0, medium:0, advanced:0 };
+      state.answered = [];
+      const sm = document.getElementById('lobbyStatusMsg');
+      if (sm) { sm.style.background='rgba(0,230,118,0.1)'; sm.style.borderColor='rgba(0,230,118,0.25)'; sm.style.color='var(--easy)'; sm.textContent='✅ Host started! Loading first question...'; }
+      break;
+    case 'QUESTION':
+      hostMode = true;
+      loadHostQuestion(m.question, m.index);
+      break;
+    case 'TIME_UP':
+      if (hostMode && document.getElementById('screen-quiz').classList.contains('active')) timeOut();
+      break;
+    case 'PAUSE':
+      if (hostMode) clearInterval(state.timerInterval);
+      break;
+    case 'RESUME':
+      if (hostMode && currentHostQ) startTimer(currentHostQ.level);
+      break;
+    case 'REVEAL_ANSWER':
+      if (hostMode) revealAnswerFromHost(m.correct);
+      break;
+    case 'SHOW_LEADERBOARD':
+      if (m.leaderboard) renderHostLeaderboard(m.leaderboard);
+      break;
+    case 'QUIZ_END':
+      if (hostMode && m.leaderboard) { clearInterval(state.timerInterval); renderHostLeaderboard(m.leaderboard); }
+      break;
+    case 'HOST_RESET':
+      hostMode = false;
+      break;
+  }
+}
+
+let currentHostQ = null;
+
+function loadHostQuestion(q, index) {
+  currentHostQ = q;
+  showScreen('screen-quiz');
+  const total = 100;
+  document.getElementById('qNum').textContent = index + 1;
+  document.getElementById('qTotal').textContent = total;
+  document.getElementById('qCorrect').textContent = state.correct;
+  document.getElementById('currentScore').textContent = state.score;
+  document.getElementById('streakNum').textContent = '🔥' + state.streak;
+  document.getElementById('quizProgressBar').style.width = ((index / total) * 100).toFixed(1) + '%';
+  const lt = document.getElementById('qLevelTag');
+  lt.textContent = q.level.toUpperCase();
+  lt.className = 'level-tag level-' + q.level;
+  document.getElementById('qNumDisplay').textContent = 'QUESTION ' + (index + 1);
+  document.getElementById('questionText').textContent = q.text;
+  const codeEl = document.getElementById('codeBlock');
+  if (q.code) { codeEl.textContent = q.code; codeEl.style.display = 'block'; }
+  else codeEl.style.display = 'none';
+  const grid = document.getElementById('optionsGrid');
+  const letters = ['A','B','C','D'];
+  grid.innerHTML = q.options.map((opt, i) =>
+    `<button class="option-btn" onclick="selectHostAnswer(${i})">
+      <span class="option-letter">${letters[i]}</span><span>${opt}</span>
+    </button>`
+  ).join('');
+  const fb = document.getElementById('feedbackBar');
+  fb.style.display = 'none'; fb.className = 'feedback-bar';
+  state.levelTotal[q.level] = (state.levelTotal[q.level] || 0) + 1;
+  const timeMap = { easy:30, medium:25, advanced:20 };
+  state.timeLeft = timeMap[q.level] || 30;
+  startTimer(q.level);
+}
+
+function selectHostAnswer(idx) {
+  clearInterval(state.timerInterval);
+  const q = currentHostQ;
+  if (!q) return;
+  const btns = document.querySelectorAll('.option-btn');
+  btns.forEach(b => b.disabled = true);
+  btns[q.correct].classList.add('correct');
+  const isCorrect = idx === q.correct;
+  if (!isCorrect) btns[idx].classList.add('wrong');
+  const points = isCorrect ? calcPoints(q.level, state.timeLeft) : 0;
+  if (isCorrect) {
+    state.correct++; state.score += points; state.streak++;
+    if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+    state.levelCorrect[q.level] = (state.levelCorrect[q.level] || 0) + 1;
+    showScoreFloat('+' + points, '#0ff');
+  } else { state.streak = 0; showScoreFloat('✗', '#f66'); }
+  document.getElementById('currentScore').textContent = state.score;
+  document.getElementById('streakNum').textContent = '🔥' + state.streak;
+  document.getElementById('qCorrect').textContent = state.correct;
+  const fb = document.getElementById('feedbackBar');
+  fb.style.display = 'block';
+  if (isCorrect) {
+    fb.className = 'feedback-bar feedback-correct';
+    fb.textContent = '✅ Correct! +' + points + ' points' + (state.streak > 1 ? ' 🔥 Streak x' + state.streak : '');
+  } else {
+    fb.className = 'feedback-bar feedback-wrong';
+    fb.textContent = '❌ Wrong. Answer: ' + q.options[q.correct];
+  }
+  // Report answer to host via Firebase
+  if (_db) {
+    _push(_ref(_db, 'quiz/answers'), {
+      type: 'STUDENT_ANSWER',
+      id: state.playerID || state.playerName,
+      name: state.playerName,
+      correct: isCorrect,
+      points: points,
+      _t: Date.now()
+    });
+  }
+}
+
+function revealAnswerFromHost(correctIdx) {
+  const btns = document.querySelectorAll('.option-btn');
+  btns.forEach(b => b.disabled = true);
+  if (btns[correctIdx]) btns[correctIdx].classList.add('correct');
+  const fb = document.getElementById('feedbackBar');
+  fb.style.display = 'block';
+  fb.className = 'feedback-bar feedback-correct';
+  fb.textContent = '📢 Host revealed the answer!';
+}
+
+function renderHostLeaderboard(lb) {
+  leaderboard = lb.map(p => ({
+    name: p.name, char: p.char || '❓', charName: p.charName || '',
+    score: p.score, correct: p.correct, total: 100, streak: p.streak || 0
+  }));
+  showLeaderboard();
+}
+
+function broadcastStudentJoin() {
+  if (!_db) { setTimeout(broadcastStudentJoin, 300); return; }
+  const id = state.playerID || state.playerName || ('s_' + Date.now());
+  _set(_ref(_db, 'quiz/students/' + id), {
+    type: 'STUDENT_JOIN',
+    name: state.playerName,
+    char: state.character ? state.character.emoji : '❓',
+    charName: state.character ? state.character.name : 'Unknown',
+    _t: Date.now()
+  });
+}
+
+function checkURLCode() {
+  const p = new URLSearchParams(window.location.search);
+  if (p.get('code') === 'OOPCSC') showScreen('screen-join');
+}
+
+// ================================================================
+//  JOIN QUIZ
+// ================================================================
+function joinWithCode() {
+  const code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
+  if (code === 'OOPCSC') showScreen('screen-join');
+  else alert('Invalid code. Try: OOPCSC');
+}
+
+function joinQuiz() {
+  const name = document.getElementById('playerName').value.trim();
+  if (!name) { alert('Please enter your name!'); return; }
+  state.playerName = name;
+  state.playerID = document.getElementById('playerID').value.trim();
+
+  // Assign character based on name hash
+  const idx = name.split('').reduce((a,c) => a + c.charCodeAt(0), 0) % CHARACTERS.length;
+  state.character = CHARACTERS[idx];
+
+  // Show character screen
+  document.getElementById('charPlayerName').textContent = name;
+  document.getElementById('charEmoji').textContent = state.character.emoji;
+  document.getElementById('charName').textContent = state.character.name;
+  document.getElementById('charDesc').textContent = state.character.desc;
+  document.getElementById('charPower').textContent = '⚡ ' + state.character.power;
+
+  const traitsEl = document.getElementById('charTraits');
+  traitsEl.innerHTML = state.character.traits.map(t =>
+    `<span class="char-trait" style="background:rgba(255,255,255,0.06);border:1px solid rgba(200,220,255,0.15);color:#cde;">${t}</span>`
+  ).join('');
+
+  // Add to lobby
+  addToLobby(name, state.character.emoji);
+  broadcastStudentJoin();
+  showScreen('screen-character');
+}
+
+// ================================================================
+//  LOBBY
+// ================================================================
+const lobbyPlayers = [];
+function addToLobby(name, emoji) {
+  lobbyPlayers.push({ name, emoji });
+  renderLobby();
+  updateHostPlayers();
+}
+
+function renderLobby() {
+  const el = document.getElementById('lobbyPlayers');
+  el.innerHTML = lobbyPlayers.map(p =>
+    `<div class="player-chip">${p.emoji} ${p.name}</div>`
+  ).join('');
+  document.getElementById('hostPlayerCount').textContent = lobbyPlayers.length;
+}
+
+function hostStartQuiz() {
+  document.getElementById('hostStatus').textContent = '🟢 Running';
+  document.getElementById('hostStatus').style.color = 'var(--easy)';
+  startQuiz();
+  showScreen('screen-quiz');
+}
+
+// ================================================================
+//  QUIZ ENGINE
+// ================================================================
+const shuffled = shuffleQuestions();
+
+function shuffleQuestions() {
+  const easy = QUESTIONS.filter(q => q.level === 'easy').slice(0,20);
+  const medium = QUESTIONS.filter(q => q.level === 'medium').slice(0,30);
+  const advanced = QUESTIONS.filter(q => q.level === 'advanced').slice(0,50);
+  return [...shuffle(easy), ...shuffle(medium), ...shuffle(advanced)];
+}
+
+function shuffle(arr) {
+  return [...arr].sort(() => Math.random() - 0.5);
+}
+
+function startQuiz() {
+  state.currentQ = 0; state.score = 0; state.correct = 0;
+  state.streak = 0; state.bestStreak = 0;
+  state.levelCorrect = { easy:0, medium:0, advanced:0 };
+  state.levelTotal = { easy:0, medium:0, advanced:0 };
+  state.answered = [];
+  document.getElementById('qCharMini').textContent = state.character ? state.character.emoji + ' ' + state.playerName : '';
+  showScreen('screen-quiz');
+  loadQuestion();
+}
+
+function loadQuestion() {
+  if (state.currentQ >= shuffled.length) { endQuiz(); return; }
+  clearInterval(state.timerInterval);
+
+  const q = shuffled[state.currentQ];
+  const total = shuffled.length;
+
+  // Update meta
+  document.getElementById('qNum').textContent = state.currentQ + 1;
+  document.getElementById('qTotal').textContent = total;
+  document.getElementById('qCorrect').textContent = state.correct;
+  document.getElementById('currentScore').textContent = state.score;
+  document.getElementById('streakNum').textContent = '🔥' + state.streak;
+  const pct = ((state.currentQ) / total * 100).toFixed(1);
+  document.getElementById('quizProgressBar').style.width = pct + '%';
+
+  // Level tag
+  const lt = document.getElementById('qLevelTag');
+  lt.textContent = q.level.toUpperCase();
+  lt.className = 'level-tag level-' + q.level;
+
+  // Question
+  document.getElementById('qNumDisplay').textContent = 'QUESTION ' + (state.currentQ + 1);
+  document.getElementById('questionText').textContent = q.text;
+
+  const codeEl = document.getElementById('codeBlock');
+  if (q.code) { codeEl.textContent = q.code; codeEl.style.display = 'block'; }
+  else codeEl.style.display = 'none';
+
+  // Options
+  const grid = document.getElementById('optionsGrid');
+  const letters = ['A','B','C','D'];
+  grid.innerHTML = q.options.map((opt, i) =>
+    `<button class="option-btn" onclick="selectAnswer(${i})">
+      <span class="option-letter">${letters[i]}</span>
+      <span>${opt}</span>
+    </button>`
+  ).join('');
+
+  // Hide feedback
+  const fb = document.getElementById('feedbackBar');
+  fb.style.display = 'none'; fb.className = 'feedback-bar';
+
+  // Timer (30s easy, 25s medium, 20s advanced)
+  const timeMap = { easy:30, medium:25, advanced:20 };
+  state.timeLeft = timeMap[q.level];
+  startTimer(q.level);
+
+  state.levelTotal[q.level]++;
+}
+
+function startTimer(level) {
+  const total = { easy:30, medium:25, advanced:20 }[level];
+  const circumference = 163;
+  updateTimer(state.timeLeft, total, circumference);
+  state.timerInterval = setInterval(() => {
+    state.timeLeft--;
+    updateTimer(state.timeLeft, total, circumference);
+    if (state.timeLeft <= 0) {
+      clearInterval(state.timerInterval);
+      timeOut();
+    }
+  }, 1000);
+}
+
+function updateTimer(left, total, circ) {
+  const offset = circ * (1 - left / total);
+  const circle = document.getElementById('timerCircle');
+  circle.style.strokeDashoffset = offset;
+  document.getElementById('timerNum').textContent = left;
+  const pct = left / total;
+  if (pct > 0.5) circle.style.stroke = 'var(--c1)';
+  else if (pct > 0.25) circle.style.stroke = 'var(--medium)';
+  else circle.style.stroke = 'var(--hard)';
+}
+
+function selectAnswer(idx) {
+  clearInterval(state.timerInterval);
+  const q = shuffled[state.currentQ];
+  const btns = document.querySelectorAll('.option-btn');
+  btns.forEach(b => b.disabled = true);
+  btns[q.correct].classList.add('correct');
+
+  const isCorrect = idx === q.correct;
+  if (!isCorrect) btns[idx].classList.add('wrong');
+
+  const points = isCorrect ? calcPoints(q.level, state.timeLeft) : 0;
+  if (isCorrect) {
+    state.correct++;
+    state.score += points;
+    state.streak++;
+    if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+    state.levelCorrect[q.level]++;
+    showScoreFloat('+' + points, '#0ff');
+  } else {
+    state.streak = 0;
+    showScoreFloat('✗', '#f66');
+  }
+
+  const fb = document.getElementById('feedbackBar');
+  fb.style.display = 'block';
+  if (isCorrect) {
+    fb.className = 'feedback-bar feedback-correct';
+    fb.textContent = '✅ Correct! +' + points + ' points' + (state.streak > 1 ? ' 🔥 Streak x' + state.streak : '');
+  } else {
+    fb.className = 'feedback-bar feedback-wrong';
+    fb.textContent = '❌ Wrong. Answer: ' + q.options[q.correct];
+  }
+
+  state.answered.push({ q: state.currentQ, correct: isCorrect, level: q.level });
+  setTimeout(() => { state.currentQ++; loadQuestion(); }, 1600);
+}
+
+function timeOut() {
+  const q = shuffled[state.currentQ];
+  const btns = document.querySelectorAll('.option-btn');
+  btns.forEach(b => b.disabled = true);
+  btns[q.correct].classList.add('correct');
+  state.streak = 0;
+  const fb = document.getElementById('feedbackBar');
+  fb.className = 'feedback-bar feedback-wrong';
+  fb.textContent = '⏱ Time\'s up! Answer: ' + q.options[q.correct];
+  fb.style.display = 'block';
+  state.answered.push({ q: state.currentQ, correct: false, level: q.level });
+  setTimeout(() => { state.currentQ++; loadQuestion(); }, 1800);
+}
+
+function calcPoints(level, timeLeft) {
+  const base = { easy:100, medium:200, advanced:350 };
+  const bonus = Math.floor(timeLeft * { easy:3, medium:5, advanced:8 }[level]);
+  const streakMult = Math.min(1 + (state.streak * 0.1), 2.5);
+  return Math.round((base[level] + bonus) * streakMult);
+}
+
+function showScoreFloat(text, color) {
+  const el = document.getElementById('scoreFloat');
+  el.textContent = text; el.style.color = color;
+  el.className = 'score-float show';
+  setTimeout(() => el.className = 'score-float', 900);
+}
+
+// ================================================================
+//  END QUIZ
+// ================================================================
+function endQuiz() {
+  clearInterval(state.timerInterval);
+
+  // Save to leaderboard
+  leaderboard.push({
+    name: state.playerName || 'Anonymous',
+    char: state.character ? state.character.emoji : '❓',
+    charName: state.character ? state.character.name : 'Unknown',
+    score: state.score,
+    correct: state.correct,
+    total: shuffled.length,
+    streak: state.bestStreak,
+    levelCorrect: {...state.levelCorrect},
+    levelTotal: {...state.levelTotal}
+  });
+  leaderboard.sort((a,b) => b.score - a.score || b.correct - a.correct);
+
+  // Grade
+  const pct = state.correct / shuffled.length * 100;
+  let grade, gradeColor, msg;
+  if (pct >= 90) { grade='S'; gradeColor='#ffd700'; msg='Outstanding! You are a true OOP Master! 🏆'; }
+  else if (pct >= 80) { grade='A'; gradeColor='#0ff'; msg='Excellent! You really know your OOP! ⚡'; }
+  else if (pct >= 70) { grade='B'; gradeColor='#0f8'; msg='Great job! Solid understanding of the concepts.'; }
+  else if (pct >= 60) { grade='C'; gradeColor='#ff0'; msg='Good effort! Review inheritance & polymorphism.'; }
+  else if (pct >= 50) { grade='D'; gradeColor='#f80'; msg='Keep practicing! Focus on the advanced topics.'; }
+  else { grade='F'; gradeColor='#f66'; msg='Don\'t give up! Review the PDF materials and try again.'; }
+
+  document.getElementById('resultChar').textContent = state.character ? state.character.emoji : '🎓';
+  document.getElementById('resultGrade').textContent = grade;
+  document.getElementById('resultGrade').style.color = gradeColor;
+  document.getElementById('resultMsg').textContent = msg;
+  document.getElementById('rScore').textContent = state.score.toLocaleString();
+  document.getElementById('rCorrect').textContent = state.correct + '/' + shuffled.length;
+  document.getElementById('rStreak').textContent = state.bestStreak;
+
+  // Level breakdown
+  const lbEl = document.getElementById('levelBreakdown');
+  lbEl.innerHTML = ['easy','medium','advanced'].map(lv => {
+    const c = state.levelCorrect[lv], t = state.levelTotal[lv];
+    const p = t > 0 ? Math.round(c/t*100) : 0;
+    const col = lv==='easy' ? 'var(--easy)' : lv==='medium' ? 'var(--medium)' : 'var(--hard)';
+    return `<div style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:4px;">
+        <span style="color:${col};text-transform:uppercase;font-weight:600;">${lv}</span>
+        <span>${c}/${t} (${p}%)</span>
+      </div>
+      <div style="background:rgba(255,255,255,0.06);border-radius:4px;height:8px;">
+        <div style="width:${p}%;height:8px;border-radius:4px;background:${col};transition:width 0.8s;"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  showScreen('screen-results');
+}
+
+function restartQuiz() { showScreen('screen-join'); }
+
+// ================================================================
+//  LEADERBOARD
+// ================================================================
+function showLeaderboard() {
+  // Add some demo entries if leaderboard is empty
+  if (leaderboard.length === 0) {
+    leaderboard = [
+      { name:'Ahmed Hassan', char:'🧙‍♂️', charName:'The Polymorphist', score:28500, correct:87, total:100, streak:12 },
+      { name:'Sara Mohamed', char:'🔒', charName:'The Encapsulator', score:24200, correct:80, total:100, streak:9 },
+      { name:'Omar Khalil', char:'🏗️', charName:'The Constructor', score:19800, correct:72, total:100, streak:7 },
+    ];
+  }
+
+  const medals = ['🥇','🥈','🥉'];
+  const rankClasses = ['rank-1','rank-2','rank-3'];
+  const list = document.getElementById('leaderboardList');
+
+  list.innerHTML = leaderboard.map((p, i) => {
+    const rank = i < 3 ? medals[i] : '#' + (i+1);
+    const rankClass = i < 3 ? rankClasses[i] : '';
+    const pct = Math.round(p.correct / (p.total || 100) * 100);
+    return `
+      <div class="lb-row">
+        <div class="lb-rank ${rankClass}">${rank}</div>
+        <div class="lb-char">${p.char}</div>
+        <div style="flex:1;">
+          <div class="lb-name">${p.name}</div>
+          <div class="lb-sub">${p.charName} · ${pct}% correct · Best streak: ${p.streak}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="lb-score">${p.score.toLocaleString()}</div>
+          <div class="lb-correct">${p.correct}/${p.total || 100} ✓</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  showScreen('screen-leaderboard');
+}
+
+// ================================================================
+//  HOST DASHBOARD
+// ================================================================
+function updateHostPlayers() {
+  const list = document.getElementById('hostPlayerList');
+  if (lobbyPlayers.length === 0) {
+    list.innerHTML = '<div style="color:rgba(200,220,255,0.3);font-size:0.9rem;text-align:center;padding:1rem;">No players yet</div>';
+    return;
+  }
+  list.innerHTML = lobbyPlayers.map(p =>
+    `<div class="host-player-item">
+      <div class="status-dot dot-active"></div>
+      <span style="font-size:1.2rem;">${p.emoji}</span>
+      <span>${p.name}</span>
+      <span style="margin-left:auto; font-size:0.8rem; color:rgba(200,220,255,0.4);">In Lobby</span>
+    </div>`
+  ).join('');
+  document.getElementById('hostPlayerCount').textContent = lobbyPlayers.length;
+  updateHostTop3();
+}
+
+function updateHostTop3() {
+  const top3 = document.getElementById('hostTop3');
+  if (leaderboard.length === 0) {
+    top3.innerHTML = '<div style="color:rgba(200,220,255,0.3);font-size:0.9rem;text-align:center;padding:1rem;">Quiz hasn\'t started</div>';
+    return;
+  }
+  const medals = ['🥇','🥈','🥉'];
+  top3.innerHTML = leaderboard.slice(0,3).map((p,i) =>
+    `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+      <span style="font-size:1.2rem;">${medals[i]}</span>
+      <span style="font-size:1.1rem;">${p.char}</span>
+      <span style="flex:1;font-size:0.9rem;">${p.name}</span>
+      <span style="font-family:'Orbitron',monospace;font-size:0.9rem;color:var(--c1);">${p.score.toLocaleString()}</span>
+    </div>`
+  ).join('');
+}
+
+function addDemoPlayer() {
+  const demos = [
+    { name:'Yusuf Ali', emoji:'⚡' },
+    { name:'Nour Ibrahim', emoji:'🌀' },
+    { name:'Karim Saad', emoji:'🧬' },
+    { name:'Layla Hassan', emoji:'🤝' },
+    { name:'Mohamed Tamer', emoji:'🔗' },
+  ];
+  const d = demos[lobbyPlayers.length % demos.length];
+  if (!lobbyPlayers.find(p => p.name === d.name)) {
+    addToLobby(d.name, d.emoji);
+    // Add to leaderboard with random score
+    leaderboard.push({
+      name: d.name, char: d.emoji, charName:'Demo Player',
+      score: Math.floor(Math.random()*20000)+5000,
+      correct: Math.floor(Math.random()*50)+40, total:100,
+      streak: Math.floor(Math.random()*10)+1
+    });
+    leaderboard.sort((a,b) => b.score - a.score);
+    updateHostTop3();
+  }
+}
+</script>
+</body>
+</html>
